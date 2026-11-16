@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Travmodell 2.0 – H2H behörighetstest</title><style>body{font:16px system-ui;background:#141a20;color:#f4f6f8;max-width:550px;margin:30px auto;padding:18px}input,button{box-sizing:border-box;width:100%;font:inherit;padding:14px;margin:8px 0;border-radius:8px}input{background:#26323e;color:white;border:1px solid #74818d}button{background:#207454;color:white;border:0}button:disabled{opacity:.5}pre{white-space:pre-wrap;background:#26323e;padding:14px;border-radius:8px}small{color:#b5c1cb}</style></head><body><h2>Travmodell 2.0 – H2H behörighetstest</h2><p>Endast inloggning och lästest. Inga workers eller scheman startas.</p><label>E-post<input id="email" type="email" autocomplete="username"></label><label>Lösenord<input id="pass" type="password" autocomplete="current-password"></label><button id="test">Logga in och testa</button><button id="out" style="background:#48515b">Logga ut</button><pre id="result" aria-live="polite">Inget test utfört.</pre><small>Dela endast HTTP-statusen med ChatGPT. Dela aldrig lösenord eller token.</small><script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const base='https://kdorqppajsaqidsvtcaa.supabase.co',key="sb_publishable_GQs9L0B5nDHiCl914PHUHA_wGjdX3nE";
+const s=createClient(base,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+const result=document.querySelector('#result'),button=document.querySelector('#test');
+button.onclick=async()=>{button.disabled=true;result.textContent='Testar...';try{
+const {data,error}=await s.auth.signInWithPassword({email:document.querySelector('#email').value,password:document.querySelector('#pass').value});
+document.querySelector('#pass').value='';
+if(error||!data.session){result.textContent='Inloggningen misslyckades: '+(error?.message||'ingen session');return;}
+const r=await fetch(base+'/functions/v1/trav-dashboard-h2h-read-v1',{method:'POST',headers:{'Authorization':'Bearer '+data.session.access_token,'apikey':key,'Content-Type':'application/json'},body:JSON.stringify({race_id:'ae385321-719b-473e-bdde-e6bd4153ec7c'})});
+result.textContent='HTTP '+r.status+'\n'+(r.status===403?'Godkänt: inloggad användare saknar dashboardbehörighet':r.status===401?'Autentiseringen avvisades':r.ok?'Dashboardläsning godkänd':'Oväntat svar');
+}catch(e){result.textContent='Nätverksfel: '+String(e)}finally{button.disabled=false}};
+document.querySelector('#out').onclick=async()=>{await s.auth.signOut();document.querySelector('#pass').value='';result.textContent='Utloggad';};
+</script></body></html>
